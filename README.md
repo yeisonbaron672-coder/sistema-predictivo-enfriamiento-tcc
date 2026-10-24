@@ -1,5 +1,7 @@
 # Sistema Predictivo de Enfriamiento — Lácteos del Valle (TCC)
 
+🌐 **Demo en vivo (Vercel):** [https://sistema-predictivo-enfriamiento-tcc.vercel.app](https://sistema-predictivo-enfriamiento-tcc.vercel.app)
+
 **Universidad de Cartagena – Campus Cereté**  
 **Facultad de Ingeniería · Ingeniería de Software (2026-2)**  
 - **Tutor:** Ing. Luis Gorrostola  
