@@ -16,8 +16,7 @@ const ICONOS_DIAGNOSTICO = {
 
 const TITULOS_VISTAS = {
     "tab-monitoreo": "Monitoreo y Predicción de Enfriamiento",
-    "tab-rk4": "Serie Numérica Runge-Kutta de 4to Orden (RK4)",
-    "tab-modelo": "Formulación Matemática y Sustitución en Tiempo Real",
+    "tab-rk4": "Proyección Térmica Minuto a Minuto",
     "tab-bitacora": "Bitácora de Lotes y Control de Degradación Térmica"
 };
 
@@ -258,21 +257,6 @@ function actualizarInterfaz(data) {
 
     // 3. Esquema Técnico SVG
     actualizarEsquemaTanque(p.T0, p.T_muestra, p.T_meta, p.t_muestra, p.activar_auxiliar);
-
-    // 4. Sustitución Matemática
-    document.getElementById("math-edo-sub").textContent =
-        `dT / dt = -${r.k_real.toFixed(5)} · (T - ${p.Tm.toFixed(1)})`;
-
-    document.getElementById("math-t-text").textContent = `t = ${p.t_muestra} min`;
-    document.getElementById("math-k-sub").textContent =
-        `k = -(1 / ${p.t_muestra}) · ln( [${p.T_muestra.toFixed(1)} - ${p.Tm.toFixed(1)}] / [${p.T0.toFixed(1)} - ${p.Tm.toFixed(1)}] ) = ${r.k_real.toFixed(5)} min⁻¹`;
-
-    document.getElementById("math-t-sub").textContent =
-        `t_final = -(1 / ${r.k_real.toFixed(5)}) · ln( [${p.T_meta.toFixed(1)} - ${p.Tm.toFixed(1)}] / [${p.T0.toFixed(1)} - ${p.Tm.toFixed(1)}] ) = ${r.t_predicho.toFixed(2)} min`;
-
-    const errMedio = s.errores_abs.reduce((a, b) => a + b, 0) / s.errores_abs.length;
-    document.getElementById("math-rk4-sub").textContent =
-        `Paso h = ${p.h_rk4} min | T_RK4(4°C) = ${r.t_predicho_rk4 || "--"} min | Dif. media: ${errMedio.toFixed(5)} °C`;
 }
 
 function actualizarEsquemaTanque(T0, T_actual, T_meta, tiempoActual, auxActivo) {

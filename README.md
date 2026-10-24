@@ -2,16 +2,10 @@
 
 **Aplicación en línea:** [https://sistema-predictivo-enfriamiento-tcc.vercel.app](https://sistema-predictivo-enfriamiento-tcc.vercel.app)
 
-## Descripción Técnica
-Sistema de monitoreo termodinámico y control de calidad para procesos de pasteurización y enfriamiento lácteo ($72^\circ\text{C} \to 4^\circ\text{C}$). Implementa la **Ley de Enfriamiento de Newton** junto con integración numérica **Runge-Kutta de 4to Orden (RK4)**:
-
-$$\frac{dT}{dt} = -k(T - T_m) \quad \Longrightarrow \quad T(t) = T_m + (T_0 - T_m)e^{-kt}$$
-
-### Módulos
-- **Estimación dinámica de transferencia térmica ($k$):** Cálculo en tiempo real del coeficiente de decaimiento a partir de lecturas tempranas de termopar.
-- **Proyección de tiempo a consigna ($4^\circ\text{C}$):** Determinación anticipada de cumplimiento del umbral microbiológico ($45\text{ min}$).
-- **Integración numérica RK4:** Simulación ante fluctuaciones del medio refrigerante y activación de enfriamiento auxiliar.
-- **Bitácora de lotes:** Seguimiento histórico del coeficiente $k$ para mantenimiento preventivo de compresores.
+## Módulos Operativos
+- **Monitoreo y Predicción:** Captura de lectura del termopar PT100, cálculo automático de la tasa de enfriamiento del compresor ($k$), proyección del tiempo exacto para alcanzar los $4^\circ\text{C}$ y emisión de alertas tempranas ($t \le 45\text{ min}$).
+- **Proyección Minuto a Minuto:** Registro detallado de la evolución térmica del tanque y respuesta ante activación de unidad de refrigeración auxiliar.
+- **Bitácora de Lotes:** Historial operativo de lotes procesados y monitoreo de desgaste de compresores.
 
 ## Ejecución Local
 ```bash

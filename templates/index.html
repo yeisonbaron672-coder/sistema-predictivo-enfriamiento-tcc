@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/styles.css?v=3">
+    <link rel="stylesheet" href="/static/css/styles.css?v=4">
 </head>
 <body>
     <div class="app-shell">
@@ -37,13 +37,7 @@
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                         <rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/>
                     </svg>
-                    <span>Serie Numérica (RK4)</span>
-                </button>
-                <button type="button" class="nav-item" data-tab="tab-modelo" onclick="cambiarVista('tab-modelo', this)">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M8 7h6"/><path d="M8 11h8"/>
-                    </svg>
-                    <span>Modelo Matemático</span>
+                    <span>Proyección Minuto a Minuto</span>
                 </button>
                 <button type="button" class="nav-item" data-tab="tab-bitacora" onclick="cambiarVista('tab-bitacora', this)">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -384,13 +378,13 @@
                         </div>
                     </div>
 
-                    <!-- VISTA 2: SERIE NUMÉRICA RK4 -->
+                    <!-- VISTA 2: PROYECCIÓN MINUTO A MINUTO -->
                     <div id="tab-rk4" class="view-pane">
                         <div class="card">
                             <div class="panel-heading">
                                 <div>
-                                    <h2>Integración Numérica Paso a Paso — Método de Runge-Kutta (RK4)</h2>
-                                    <p class="panel-sub">Comparación punto a punto entre la solución exacta y la aproximación numérica de cuarto orden</p>
+                                    <h2>Proyección Térmica Minuto a Minuto</h2>
+                                    <p class="panel-sub">Seguimiento detallado de la temperatura proyectada en el tanque hasta alcanzar la consigna</p>
                                 </div>
                             </div>
                             <div class="table-container">
@@ -398,11 +392,11 @@
                                     <thead>
                                         <tr>
                                             <th>Tiempo t (min)</th>
-                                            <th>T(t) Analítica (°C)</th>
-                                            <th>T(t) Runge-Kutta RK4 (°C)</th>
-                                            <th>T(t) Límite Normativo (°C)</th>
+                                            <th>Temp. Proyectada (°C)</th>
+                                            <th>Simulación Dinámica RK4 (°C)</th>
+                                            <th>Curva Límite Normativa (°C)</th>
                                             <th>Refrigerante Tₘ(t) (°C)</th>
-                                            <th>Error Absoluto |ΔT|</th>
+                                            <th>Desviación |ΔT|</th>
                                         </tr>
                                     </thead>
                                     <tbody id="tabla-rk4-body"></tbody>
@@ -411,60 +405,7 @@
                         </div>
                     </div>
 
-                    <!-- VISTA 3: MODELO MATEMÁTICO -->
-                    <div id="tab-modelo" class="view-pane">
-                        <div class="card">
-                            <div class="panel-heading">
-                                <div>
-                                    <h2>Formulación Matemática y Sustitución con Datos Actuales</h2>
-                                    <p class="panel-sub">Resolución analítica por separación de variables y esquema numérico de cuarto orden</p>
-                                </div>
-                            </div>
-                            <div class="equations-grid">
-                                <div class="eq-card">
-                                    <div class="eq-num">01</div>
-                                    <h3>Ecuación Diferencial Ordinaria (Ley de Newton)</h3>
-                                    <p>La rapidez de enfriamiento de la leche es proporcional a la diferencia entre su temperatura instantánea y la del medio refrigerante:</p>
-                                    <div class="code-formula">
-                                        <div class="cf-sym">dT / dt = -k · (T - Tₘ)</div>
-                                        <div class="cf-val" id="math-edo-sub">dT / dt = -0.08251 · (T - 1.0)</div>
-                                    </div>
-                                </div>
-
-                                <div class="eq-card">
-                                    <div class="eq-num">02</div>
-                                    <h3>Despeje Dinámico de la Constante Térmica (k)</h3>
-                                    <p>Al integrar la ecuación y evaluar la lectura del sensor en <strong id="math-t-text">t = 5 min</strong>, se obtiene el coeficiente real del tanque:</p>
-                                    <div class="code-formula">
-                                        <div class="cf-sym">k = -(1 / t) · ln( [T(t) - Tₘ] / [T₀ - Tₘ] )</div>
-                                        <div class="cf-val" id="math-k-sub">k = -(1 / 5) · ln( [48.0 - 1.0] / [72.0 - 1.0] ) = 0.08251 min⁻¹</div>
-                                    </div>
-                                </div>
-
-                                <div class="eq-card">
-                                    <div class="eq-num">03</div>
-                                    <h3>Proyección del Tiempo para Alcanzar Consigna (4 °C)</h3>
-                                    <p>Con el coeficiente real del compresor, se despeja el instante exacto en que la leche alcanzará los 4.0 °C:</p>
-                                    <div class="code-formula">
-                                        <div class="cf-sym">t_final = -(1 / k) · ln( [T_obj - Tₘ] / [T₀ - Tₘ] )</div>
-                                        <div class="cf-val" id="math-t-sub">t_final = -(1 / 0.08251) · ln( [4.0 - 1.0] / [72.0 - 1.0] ) = 38.34 min</div>
-                                    </div>
-                                </div>
-
-                                <div class="eq-card">
-                                    <div class="eq-num">04</div>
-                                    <h3>Esquema Numérico Runge-Kutta de 4to Orden (RK4)</h3>
-                                    <p>Aproxima la solución cuando el medio refrigerante presenta oscilaciones o se modifica la transferencia térmica en línea:</p>
-                                    <div class="code-formula">
-                                        <div class="cf-sym">Tₙ₊₁ = Tₙ + (h / 6) · (k₁ + 2k₂ + 2k₃ + k₄)</div>
-                                        <div class="cf-val" id="math-rk4-sub">Paso h = 1.0 min | Dif. media: 0.00001 °C</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- VISTA 4: BITÁCORA DE LOTES -->
+                    <!-- VISTA 3: BITÁCORA DE LOTES -->
                     <div id="tab-bitacora" class="view-pane">
                         <div class="card">
                             <div class="panel-heading">
@@ -505,6 +446,6 @@
         </div>
     </div>
 
-    <script src="/static/js/main.js?v=3"></script>
+    <script src="/static/js/main.js?v=4"></script>
 </body>
 </html>
