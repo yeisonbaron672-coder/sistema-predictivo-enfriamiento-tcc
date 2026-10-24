@@ -155,10 +155,10 @@ function guardarLoteActual() {
 function mostrarErrorBanner(mensaje) {
     const banner = document.getElementById("alert-banner");
     banner.className = "alert-banner alert-danger";
-    document.getElementById("alert-icon").textContent = "!";
-    document.getElementById("alert-title").textContent = "ERROR DE VALIDACIÓN FÍSICA";
+    document.getElementById("alert-icon").textContent = "ERR";
+    document.getElementById("alert-title").textContent = "ERROR DE VALIDACIÓN EN PARÁMETROS";
     document.getElementById("alert-message").textContent = mensaje;
-    document.getElementById("alert-rec-text").textContent = "Verifique que T₀ > T(t) > T_meta > Tₘ y que t > 0.";
+    document.getElementById("alert-rec-text").textContent = "Verifique que T₀ > T(t) > T_obj > Tₘ y que t > 0.";
 }
 
 function actualizarInterfaz(data) {
@@ -166,7 +166,7 @@ function actualizarInterfaz(data) {
     const r = data.resultados;
     const s = data.series;
 
-    // 1. Banner de Alerta Temprana
+    // 1. Banner de Diagnóstico
     const banner = document.getElementById("alert-banner");
     const icon = document.getElementById("alert-icon");
     const title = document.getElementById("alert-title");
@@ -176,21 +176,21 @@ function actualizarInterfaz(data) {
     const btnQuickAux = document.getElementById("btn-quick-aux");
 
     banner.className = `alert-banner alert-${r.nivel}`;
-    tag.textContent = `Muestreo en t = ${p.t_muestra} min | ${p.tanque}`;
+    tag.textContent = `Lectura en t = ${p.t_muestra} min | ${p.tanque}`;
 
     if (r.nivel === "danger") {
-        icon.textContent = "⚠";
+        icon.textContent = "CRÍTICO";
         title.textContent = p.activar_auxiliar
-            ? `ALERTA DETECTADA EN t = ${p.t_muestra} MIN (SISTEMA AUXILIAR ACTIVO)`
-            : `¡ALERTA TEMPRANA! RIESGO DE PÉRDIDA DE LOTE (${r.estado})`;
+            ? `DESVIACIÓN TÉRMICA DETECTADA (ENFRIAMIENTO AUXILIAR ACTIVO)`
+            : `ALERTA DE PROCESO: TIEMPO PROYECTADO EXCEDE LÍMITE NORMATIVO`;
         btnQuickAux.style.display = p.activar_auxiliar ? "none" : "inline-block";
     } else if (r.nivel === "warning") {
-        icon.textContent = "!";
-        title.textContent = `ESTADO DEL CICLO: ${r.estado} (DESGASTE DE COMPRESOR)`;
+        icon.textContent = "AVISO";
+        title.textContent = `PRECAUCIÓN OPERATIVA: MARGEN DE ENFRIAMIENTO REDUCIDO`;
         btnQuickAux.style.display = p.activar_auxiliar ? "none" : "inline-block";
     } else {
-        icon.textContent = "✓";
-        title.textContent = `ESTADO DEL CICLO: ${r.estado} (INOCUIDAD GARANTIZADA)`;
+        icon.textContent = "OK";
+        title.textContent = `DIAGNÓSTICO DEL CICLO: DENTRO DE PARÁMETROS NORMATIVOS`;
         btnQuickAux.style.display = "none";
     }
 
@@ -204,21 +204,21 @@ function actualizarInterfaz(data) {
     document.getElementById("kpi-t-pred").innerHTML = `${r.t_predicho.toFixed(2)} <small>min</small>`;
     const diffEl = document.getElementById("kpi-t-diff");
     if (r.diferencia_tiempo > 0) {
-        diffEl.innerHTML = `<strong style="color:#dc2626;">+${r.diferencia_tiempo.toFixed(2)} min sobre el límite (${p.t_limite} min)</strong>`;
+        diffEl.innerHTML = `<strong style="color:#b91c1c;">+${r.diferencia_tiempo.toFixed(2)} min sobre el límite (${p.t_limite} min)</strong>`;
     } else {
-        diffEl.innerHTML = `<strong style="color:#16a34a;">${Math.abs(r.diferencia_tiempo).toFixed(2)} min antes del límite (${p.t_limite} min)</strong>`;
+        diffEl.innerHTML = `<strong style="color:#15803d;">${Math.abs(r.diferencia_tiempo).toFixed(2)} min de margen (${p.t_limite} min)</strong>`;
     }
 
     const tRk4Texto = r.t_predicho_rk4 !== null ? `${r.t_predicho_rk4.toFixed(2)} <small>min</small>` : `> ${s.tiempos[s.tiempos.length - 1]} <small>min</small>`;
     document.getElementById("kpi-t-rk4").innerHTML = tRk4Texto;
     document.getElementById("kpi-temp-limite").innerHTML =
-        `Temp. analítica a los ${p.t_limite} min: <strong>${r.T_en_limite.toFixed(2)} °C</strong>`;
+        `Temp. analítica a ${p.t_limite} min: <strong>${r.T_en_limite.toFixed(2)} °C</strong>`;
 
     document.getElementById("kpi-eficiencia").textContent = `${r.eficiencia_pct.toFixed(1)}%`;
     const bar = document.getElementById("kpi-eficiencia-bar");
     const widthPct = Math.min(Math.max(r.eficiencia_pct, 10), 100);
     bar.style.width = `${widthPct}%`;
-    bar.style.background = r.nivel === "danger" ? "#dc2626" : (r.nivel === "warning" ? "#d97706" : "#16a34a");
+    bar.style.background = r.nivel === "danger" ? "#b91c1c" : (r.nivel === "warning" ? "#b45309" : "#15803d");
 
     // 3. Visualizador del Tanque
     actualizarVisualizadorTanque(p.T0, p.T_muestra, p.T_meta, p.t_muestra, p.activar_auxiliar);
@@ -248,21 +248,20 @@ function actualizarVisualizadorTanque(T0, T_actual, T_meta, tiempoActual, auxAct
 
     const visAux = document.getElementById("vis-aux");
     if (auxActivo) {
-        visAux.textContent = "ACTIVO (+45% k)";
+        visAux.textContent = "ACTIVA (+45% k)";
         visAux.className = "status-on";
     } else {
-        visAux.textContent = "APAGADO";
+        visAux.textContent = "INACTIVA";
         visAux.className = "status-off";
     }
 
-    // Gradiente térmico del líquido según temperatura
     const liquid = document.getElementById("tank-liquid");
     if (T_actual >= 52) {
-        liquid.style.background = "linear-gradient(180deg, #f97316 0%, #dc2626 100%)";
+        liquid.style.background = "#b91c1c";
     } else if (T_actual >= 25) {
-        liquid.style.background = "linear-gradient(180deg, #eab308 0%, #f97316 100%)";
+        liquid.style.background = "#d97706";
     } else {
-        liquid.style.background = "linear-gradient(180deg, #38bdf8 0%, #0284c7 100%)";
+        liquid.style.background = "#0f4c81";
     }
 }
 
@@ -276,7 +275,7 @@ function detenerSimulacionTermopar() {
     }
     const btn = document.getElementById("btn-simular-termopar");
     if (btn) {
-        btn.textContent = "▶ Simular Captura de Termopar (0 → 5 min)";
+        btn.textContent = "Simular Lectura de Termopar (0 → 5 min)";
     }
 }
 
@@ -288,7 +287,7 @@ function iniciarSimulacionTermopar() {
     if (!ultimoResultado) return;
 
     const btn = document.getElementById("btn-simular-termopar");
-    btn.textContent = "⏹ Detener Simulación en Curso";
+    btn.textContent = "Detener Simulación";
 
     const p = ultimoResultado.parametros;
     const k = ultimoResultado.resultados.k_real;

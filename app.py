@@ -377,8 +377,7 @@ def limpiar_historial():
 
 if __name__ == "__main__":
     print("=================================================================")
-    print(" TCC: SISTEMA PREDICTIVO DE ENFRIAMIENTO - LÁCTEOS DEL VALLE")
-    print(" Universidad de Cartagena - Ingeniería de Software (2026-2)")
+    print(" LÁCTEOS DEL VALLE - CONTROL PREDICTIVO DE ENFRIAMIENTO")
     print(" Servidor activo en: http://127.0.0.1:5000")
     print("=================================================================")
     app.run(debug=True, host="127.0.0.1", port=5000)
