@@ -3,389 +3,508 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lácteos del Valle | Control Predictivo de Enfriamiento</title>
-    <link rel="stylesheet" href="/static/css/styles.css?v=2">
+    <title>Lácteos del Valle — Sistema de Control Térmico</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/styles.css?v=3">
 </head>
 <body>
-    <header class="topbar">
-        <div class="container topbar-inner">
-            <div class="brand">
-                <div class="brand-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 2v10m0 0a4 4 0 1 0 4 4V6a4 4 0 0 0-8 0v10a4 4 0 0 0 4-4z"/>
-                        <path d="M8 3h8"/>
+    <div class="app-shell">
+        <!-- Barra Lateral de Navegación y Estado -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-logo">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/>
                     </svg>
                 </div>
-                <div>
-                    <div class="brand-meta">PLANTA DE PROCESAMIENTO LÁCTEO · LÍNEA DE PASTEURIZACIÓN</div>
-                    <h1>Lácteos del Valle — Control Térmico y Predicción de Enfriamiento</h1>
+                <div class="brand-text">
+                    <span class="brand-name">Lácteos del Valle</span>
+                    <span class="brand-sub">Control Termodinámico</span>
                 </div>
             </div>
-            <div class="system-status">
-                <span class="status-dot"></span>
-                <span>TELEMETRÍA ACTIVA · ESTÁNDAR 72°C → 4°C</span>
-            </div>
-        </div>
-    </header>
 
-    <main class="container main-content">
-        <!-- Barra de Perfiles Operativos y Simulación -->
-        <section class="scenarios-bar card">
-            <div class="scenarios-left">
-                <span class="scenarios-label">Perfiles de Operación:</span>
-                <button type="button" class="btn-chip active" id="preset-optimo" onclick="cargarEscenario('optimo')">
-                    <span class="dot dot-ok"></span> Operación Nominal (T₅ = 48.0°C)
+            <div class="nav-section-label">MÓDULOS DEL SISTEMA</div>
+            <nav class="sidebar-nav">
+                <button type="button" class="nav-item active" data-tab="tab-monitoreo" onclick="cambiarVista('tab-monitoreo', this)">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/>
+                    </svg>
+                    <span>Monitoreo y Predicción</span>
                 </button>
-                <button type="button" class="btn-chip" id="preset-alerta" onclick="cargarEscenario('alerta')">
-                    <span class="dot dot-danger"></span> Pérdida de Eficiencia (T₅ = 53.5°C)
+                <button type="button" class="nav-item" data-tab="tab-rk4" onclick="cambiarVista('tab-rk4', this)">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/>
+                    </svg>
+                    <span>Serie Numérica (RK4)</span>
                 </button>
-                <button type="button" class="btn-chip" id="preset-auxiliar" onclick="cargarEscenario('auxiliar')">
-                    <span class="dot dot-info"></span> Corrección con Enfriamiento Auxiliar
+                <button type="button" class="nav-item" data-tab="tab-modelo" onclick="cambiarVista('tab-modelo', this)">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M8 7h6"/><path d="M8 11h8"/>
+                    </svg>
+                    <span>Modelo Matemático</span>
                 </button>
-                <button type="button" class="btn-chip" id="preset-precaucion" onclick="cargarEscenario('precaucion')">
-                    <span class="dot dot-warn"></span> Desgaste Moderado (T₅ = 50.6°C)
+                <button type="button" class="nav-item" data-tab="tab-bitacora" onclick="cambiarVista('tab-bitacora', this)">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="9"/>
+                    </svg>
+                    <span>Bitácora de Lotes</span>
                 </button>
-            </div>
-            <div class="scenarios-right">
-                <button type="button" class="btn btn-sim" id="btn-simular-termopar" onclick="iniciarSimulacionTermopar()">
-                    Simular Lectura de Termopar (0 → 5 min)
-                </button>
-            </div>
-        </section>
+            </nav>
 
-        <!-- Banner de Diagnóstico Operativo -->
-        <section id="alert-banner" class="alert-banner alert-success" role="alert">
-            <div class="alert-indicator" id="alert-icon">OK</div>
-            <div class="alert-body">
-                <div class="alert-header-row">
-                    <h2 id="alert-title">DIAGNÓSTICO DEL CICLO: DENTRO DE PARÁMETROS</h2>
-                    <span class="alert-tag" id="alert-tag">Muestreo en t = 5 min</span>
+            <div class="nav-section-label">PERFILES DE PRUEBA</div>
+            <div class="preset-list">
+                <button type="button" class="preset-btn active" id="preset-optimo" onclick="cargarEscenario('optimo')">
+                    <span class="status-indicator ind-ok"></span>
+                    <div class="preset-info">
+                        <strong>Operación Nominal</strong>
+                        <span>Lectura T(5) = 48.0 °C</span>
+                    </div>
+                </button>
+                <button type="button" class="preset-btn" id="preset-alerta" onclick="cargarEscenario('alerta')">
+                    <span class="status-indicator ind-danger"></span>
+                    <div class="preset-info">
+                        <strong>Falla de Compresor</strong>
+                        <span>Lectura T(5) = 53.5 °C</span>
+                    </div>
+                </button>
+                <button type="button" class="preset-btn" id="preset-auxiliar" onclick="cargarEscenario('auxiliar')">
+                    <span class="status-indicator ind-info"></span>
+                    <div class="preset-info">
+                        <strong>Asistencia Auxiliar RK4</strong>
+                        <span>T(5) = 53.5 °C + Auxiliar</span>
+                    </div>
+                </button>
+                <button type="button" class="preset-btn" id="preset-precaucion" onclick="cargarEscenario('precaucion')">
+                    <span class="status-indicator ind-warn"></span>
+                    <div class="preset-info">
+                        <strong>Desgaste Moderado</strong>
+                        <span>Lectura T(5) = 50.6 °C</span>
+                    </div>
+                </button>
+            </div>
+
+            <div class="sidebar-footer">
+                <div class="telemetry-badge">
+                    <span class="pulse-dot"></span>
+                    <span>Sonda PT100 Activa</span>
                 </div>
-                <p id="alert-message">Procesando lectura del sensor...</p>
-                <p class="alert-rec"><strong>Protocolo Operativo:</strong> <span id="alert-rec-text">--</span></p>
+                <div class="norm-spec">Norma: 72.0 °C → 4.0 °C (≤ 45m)</div>
             </div>
-            <div class="alert-actions" id="alert-actions">
-                <button type="button" class="btn btn-emergency" id="btn-quick-aux" onclick="activarAuxiliarRapido()">
-                    Activar Refrigeración Auxiliar
-                </button>
-            </div>
-        </section>
+        </aside>
 
-        <!-- Grid Principal -->
-        <div class="dashboard-grid">
-            <!-- Panel Izquierdo: Parámetros de Entrada -->
-            <aside class="card panel-control">
-                <div class="card-header">
-                    <h3>Parámetros de Proceso y Sensores</h3>
-                    <span class="tag-meta">Termopar PT100</span>
+        <!-- Área de Trabajo Principal -->
+        <div class="workspace">
+            <!-- Barra Superior de Estado y Acciones Rápidas -->
+            <header class="workspace-header">
+                <div class="header-title-group">
+                    <h1 id="view-title">Monitoreo y Predicción de Enfriamiento</h1>
+                    <span class="header-divider">/</span>
+                    <span class="header-unit" id="header-unit-label">Tanque Principal #1</span>
                 </div>
+                <div class="header-actions">
+                    <button type="button" class="btn btn-outline" id="btn-simular-termopar" onclick="iniciarSimulacionTermopar()">
+                        <svg id="icon-sim-play" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="5 3 19 12 5 21 5 3"/>
+                        </svg>
+                        <span id="btn-sim-text">Simular Termopar (0 → 5 min)</span>
+                    </button>
+                    <button type="button" class="btn btn-outline" onclick="guardarLoteActual()">
+                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+                        </svg>
+                        <span>Registrar en Bitácora</span>
+                    </button>
+                </div>
+            </header>
 
-                <form id="form-calculo" onsubmit="ejecutarCalculo(event)">
-                    <div class="form-group">
-                        <label for="input-tanque">Unidad de Refrigeración</label>
-                        <select id="input-tanque">
-                            <option value="Tanque Principal #1">Tanque Principal #1 — Línea A</option>
-                            <option value="Tanque #2">Tanque de Refrigeración #2 — Línea B</option>
-                            <option value="Tanque de Respaldo #3">Tanque de Respaldo #3 — Auxiliar</option>
-                        </select>
+            <!-- Barra de Diagnóstico Operativo -->
+            <section id="alert-banner" class="diagnostic-bar diag-success" role="status">
+                <div class="diag-icon-wrap" id="alert-icon-wrap">
+                    <!-- Icono inyectado por JS -->
+                </div>
+                <div class="diag-content">
+                    <div class="diag-top">
+                        <strong id="alert-title">PROCESO DENTRO DE PARÁMETROS</strong>
+                        <span class="diag-meta" id="alert-tag">Muestreo t = 5.0 min</span>
+                    </div>
+                    <p id="alert-message">Evaluando parámetros térmicos...</p>
+                    <div class="diag-protocol">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 18 15 12 9 6"/>
+                        </svg>
+                        <span><strong>Protocolo:</strong> <span id="alert-rec-text">--</span></span>
+                    </div>
+                </div>
+                <div class="diag-action">
+                    <button type="button" class="btn btn-danger" id="btn-quick-aux" onclick="activarAuxiliarRapido()">
+                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>
+                        </svg>
+                        <span>Activar Unidad Auxiliar</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Contenido Principal: Grid de Parámetros Fijos + Pestañas de Trabajo -->
+            <div class="content-layout">
+                <!-- Columna de Control de Parámetros -->
+                <section class="control-column card">
+                    <div class="panel-heading">
+                        <div class="panel-heading-title">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="4" x2="4" y1="21" y2="14"/><line x1="4" x2="4" y1="10" y2="3"/><line x1="12" x2="12" y1="21" y2="12"/><line x1="12" x2="12" y1="8" y2="3"/><line x1="20" x2="20" y1="21" y2="16"/><line x1="20" x2="20" y1="12" y2="3"/><line x1="2" x2="6" y1="14" y2="14"/><line x1="10" x2="14" y1="8" y2="8"/><line x1="18" x2="22" y1="16" y2="16"/>
+                            </svg>
+                            <h2>Parámetros de Entrada</h2>
+                        </div>
                     </div>
 
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="input-T0">Temp. Inicial <span class="math">T₀ (°C)</span></label>
-                            <input type="number" id="input-T0" step="0.1" value="72.0" required>
-                            <small>Salida de pasteurizador</small>
-                        </div>
-                        <div class="form-group">
-                            <label for="input-Tm">Refrigerante <span class="math">Tₘ (°C)</span></label>
-                            <input type="number" id="input-Tm" step="0.1" value="1.0" required>
-                            <small>Chaqueta de agua helada</small>
-                        </div>
-                    </div>
-
-                    <div class="form-row highlight-inputs">
-                        <div class="form-group">
-                            <label for="input-t-muestra">Tiempo Muestreo <span class="math">t (min)</span></label>
-                            <input type="number" id="input-t-muestra" step="0.5" min="0.5" value="5.0" required>
-                            <small>Corte de lectura</small>
-                        </div>
-                        <div class="form-group">
-                            <label for="input-T-muestra">Lectura Sensor <span class="math">T(t) (°C)</span></label>
-                            <input type="number" id="input-T-muestra" step="0.1" value="48.0" required>
-                            <small>Temperatura registrada</small>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="input-T-meta">Temp. Objetivo <span class="math">T_obj (°C)</span></label>
-                            <input type="number" id="input-T-meta" step="0.1" value="4.0" required>
-                            <small>Umbral de inocuidad</small>
-                        </div>
-                        <div class="form-group">
-                            <label for="input-t-limite">Tiempo Máximo <span class="math">t_máx (min)</span></label>
-                            <input type="number" id="input-t-limite" step="1" min="5" value="45.0" required>
-                            <small>Límite microbiológico</small>
-                        </div>
-                    </div>
-
-                    <hr class="divider">
-
-                    <div class="card-subheader">
-                        <h4>Integración Numérica (Runge-Kutta 4to Orden)</h4>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="input-h-rk4">Paso de cálculo <span class="math">h (min)</span></label>
-                            <select id="input-h-rk4">
-                                <option value="0.5">0.5 min (Alta resolución)</option>
-                                <option value="1.0" selected>1.0 min (Estándar)</option>
-                                <option value="2.5">2.5 min (Intermedio)</option>
-                                <option value="5.0">5.0 min (Resumido)</option>
+                    <form id="form-calculo" onsubmit="ejecutarCalculo(event)">
+                        <div class="field-group">
+                            <label for="input-tanque">Unidad de Proceso</label>
+                            <select id="input-tanque" onchange="ejecutarCalculo()">
+                                <option value="Tanque Principal #1">Tanque Principal #1 (Línea A)</option>
+                                <option value="Tanque #2">Tanque #2 (Línea B)</option>
+                                <option value="Tanque de Respaldo #3">Tanque de Respaldo #3</option>
                             </select>
                         </div>
-                        <div class="form-group">
-                            <label for="input-variacion">Oscilación <span class="math">ΔTₘ (±°C)</span></label>
-                            <input type="number" id="input-variacion" step="0.2" min="0" max="5" value="0.0">
-                            <small>Fluctuación térmica</small>
-                        </div>
-                    </div>
 
-                    <div class="toggle-box">
-                        <label class="switch-label" for="input-auxiliar">
+                        <div class="field-grid">
+                            <div class="field-group">
+                                <label for="input-T0">Temp. Inicial <code>T₀</code></label>
+                                <div class="input-unit">
+                                    <input type="number" id="input-T0" step="0.1" value="72.0" required>
+                                    <span>°C</span>
+                                </div>
+                            </div>
+                            <div class="field-group">
+                                <label for="input-Tm">Refrigerante <code>Tₘ</code></label>
+                                <div class="input-unit">
+                                    <input type="number" id="input-Tm" step="0.1" value="1.0" required>
+                                    <span>°C</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sensor-box">
+                            <div class="sensor-box-header">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                                </svg>
+                                <span>Lectura de Sonda Termopar</span>
+                            </div>
+                            <div class="field-grid">
+                                <div class="field-group">
+                                    <label for="input-t-muestra">Tiempo <code>t</code></label>
+                                    <div class="input-unit">
+                                        <input type="number" id="input-t-muestra" step="0.5" min="0.5" value="5.0" required>
+                                        <span>min</span>
+                                    </div>
+                                </div>
+                                <div class="field-group">
+                                    <label for="input-T-muestra">Medición <code>T(t)</code></label>
+                                    <div class="input-unit">
+                                        <input type="number" id="input-T-muestra" step="0.1" value="48.0" required>
+                                        <span>°C</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="field-grid">
+                            <div class="field-group">
+                                <label for="input-T-meta">Consigna <code>T_obj</code></label>
+                                <div class="input-unit">
+                                    <input type="number" id="input-T-meta" step="0.1" value="4.0" required>
+                                    <span>°C</span>
+                                </div>
+                            </div>
+                            <div class="field-group">
+                                <label for="input-t-limite">Tiempo Límite</label>
+                                <div class="input-unit">
+                                    <input type="number" id="input-t-limite" step="1" min="5" value="45.0" required>
+                                    <span>min</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="section-divider">CONFIGURACIÓN NUMÉRICA (RK4)</div>
+
+                        <div class="field-grid">
+                            <div class="field-group">
+                                <label for="input-h-rk4">Paso <code>h</code></label>
+                                <select id="input-h-rk4" onchange="ejecutarCalculo()">
+                                    <option value="0.5">0.5 min</option>
+                                    <option value="1.0" selected>1.0 min</option>
+                                    <option value="2.5">2.5 min</option>
+                                    <option value="5.0">5.0 min</option>
+                                </select>
+                            </div>
+                            <div class="field-group">
+                                <label for="input-variacion">Oscilación <code>ΔTₘ</code></label>
+                                <div class="input-unit">
+                                    <input type="number" id="input-variacion" step="0.2" min="0" max="5" value="0.0">
+                                    <span>±°C</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <label class="aux-toggle" for="input-auxiliar">
                             <input type="checkbox" id="input-auxiliar" onchange="ejecutarCalculo()">
-                            <span class="switch-text">
-                                <strong>Sistema de Refrigeración Auxiliar</strong>
-                                <small>Incrementa la transferencia térmica (+45% en k) a partir del muestreo</small>
-                            </span>
+                            <div class="aux-toggle-text">
+                                <strong>Enfriamiento Auxiliar</strong>
+                                <span>Incrementa +45% la tasa k tras t = 5 min</span>
+                            </div>
                         </label>
-                    </div>
 
-                    <div class="form-buttons">
-                        <button type="submit" class="btn btn-primary">
-                            Ejecutar Modelo Predictivo
+                        <button type="submit" class="btn btn-primary btn-block">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                            </svg>
+                            <span>Actualizar Cálculo</span>
                         </button>
-                        <button type="button" class="btn btn-secondary" onclick="guardarLoteActual()">
-                            Guardar Lectura en Bitácora
-                        </button>
-                    </div>
-                </form>
+                    </form>
 
-                <!-- Estado del Tanque -->
-                <div class="tank-visualizer">
-                    <div class="tank-header">
-                        <span>Monitor de Unidad</span>
-                        <span id="sim-clock" class="sim-clock">t = 5.0 min</span>
-                    </div>
-                    <div class="tank-wrapper">
-                        <div class="tank-vessel">
-                            <div class="tank-liquid" id="tank-liquid">
-                                <div class="tank-temp-overlay" id="tank-temp-display">48.0°C</div>
+                    <!-- Esquema Técnico SVG de la Unidad -->
+                    <div class="unit-schematic">
+                        <div class="schematic-header">
+                            <span>Esquema Térmico de Unidad</span>
+                            <code id="sim-clock">t = 5.0 min</code>
+                        </div>
+                        <div class="schematic-body">
+                            <svg class="tank-svg" viewBox="0 0 120 135" width="95" height="108">
+                                <!-- Chaqueta externa de refrigeración -->
+                                <rect x="14" y="18" width="92" height="98" rx="8" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>
+                                <!-- Serpentines laterales de agua helada -->
+                                <path d="M14 35 h8 M14 55 h8 M14 75 h8 M14 95 h8 M98 35 h8 M98 55 h8 M98 75 h8 M98 95 h8" stroke="#0284c7" stroke-width="2.5"/>
+                                <!-- Vaso interno del tanque -->
+                                <rect x="24" y="22" width="72" height="88" rx="4" fill="#ffffff" stroke="#334155" stroke-width="2"/>
+                                <!-- Fluido lácteo -->
+                                <rect id="svg-tank-liquid" x="26" y="40" width="68" height="68" rx="2" fill="#0f4c81"/>
+                                <!-- Sonda PT100 -->
+                                <line x1="60" y1="6" x2="60" y2="76" stroke="#1e293b" stroke-width="2.5"/>
+                                <circle cx="60" cy="76" r="4" fill="#dc2626"/>
+                                <!-- Lectura superpuesta -->
+                                <rect x="33" y="62" width="54" height="22" rx="3" fill="rgba(15, 23, 42, 0.82)"/>
+                                <text id="tank-temp-display" x="60" y="77" text-anchor="middle" fill="#ffffff" font-family="JetBrains Mono, monospace" font-size="11" font-weight="600">48.0°C</text>
+                            </svg>
+                            <div class="schematic-stats">
+                                <div class="stat-row">
+                                    <span>Entrada T₀</span>
+                                    <strong id="vis-T0">72.0 °C</strong>
+                                </div>
+                                <div class="stat-row">
+                                    <span>Sonda PT100</span>
+                                    <strong id="vis-Tt">48.0 °C</strong>
+                                </div>
+                                <div class="stat-row">
+                                    <span>Consigna</span>
+                                    <strong id="vis-Tmeta">4.0 °C</strong>
+                                </div>
+                                <div class="stat-row">
+                                    <span>Auxiliar</span>
+                                    <strong id="vis-aux" class="badge-off">INACTIVO</strong>
+                                </div>
                             </div>
                         </div>
-                        <div class="tank-telemetry">
-                            <div class="telemetry-item">
-                                <span class="t-label">Entrada (T₀):</span>
-                                <strong id="vis-T0">72.0 °C</strong>
+                    </div>
+                </section>
+
+                <!-- Columna Derecha: Vistas Modulares por Pestañas -->
+                <div class="views-column">
+                    <!-- VISTA 1: MONITOREO Y PREDICCIÓN -->
+                    <div id="tab-monitoreo" class="view-pane active">
+                        <!-- Fila de 4 Indicadores Clave -->
+                        <div class="metrics-row">
+                            <div class="metric-card card">
+                                <div class="metric-header">
+                                    <span>Coeficiente Térmico (k)</span>
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                                    </svg>
+                                </div>
+                                <div class="metric-val" id="kpi-k-real">0.08251 <small>min⁻¹</small></div>
+                                <div class="metric-foot">Mínimo requerido: <strong id="kpi-k-min">0.07030 min⁻¹</strong></div>
                             </div>
-                            <div class="telemetry-item">
-                                <span class="t-label">Lectura actual:</span>
-                                <strong id="vis-Tt">48.0 °C</strong>
+
+                            <div class="metric-card card">
+                                <div class="metric-header">
+                                    <span>Tiempo a 4°C (Analítico)</span>
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                                    </svg>
+                                </div>
+                                <div class="metric-val" id="kpi-t-pred">38.34 <small>min</small></div>
+                                <div class="metric-foot" id="kpi-t-diff">6.66 min de margen operativo</div>
                             </div>
-                            <div class="telemetry-item">
-                                <span class="t-label">Consigna final:</span>
-                                <strong id="vis-Tmeta">4.0 °C</strong>
+
+                            <div class="metric-card card">
+                                <div class="metric-header">
+                                    <span>Tiempo a 4°C (RK4)</span>
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                                    </svg>
+                                </div>
+                                <div class="metric-val" id="kpi-t-rk4">38.34 <small>min</small></div>
+                                <div class="metric-foot" id="kpi-temp-limite">Temp. a 45 min: <strong>2.73 °C</strong></div>
                             </div>
-                            <div class="telemetry-item">
-                                <span class="t-label">Unidad Auxiliar:</span>
-                                <strong id="vis-aux" class="status-off">INACTIVA</strong>
+
+                            <div class="metric-card card">
+                                <div class="metric-header">
+                                    <span>Eficiencia de Compresor</span>
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                                    </svg>
+                                </div>
+                                <div class="metric-val" id="kpi-eficiencia">117.4%</div>
+                                <div class="meter-track">
+                                    <div class="meter-fill" id="kpi-eficiencia-bar" style="width: 100%;"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Gráfica Principal -->
+                        <div class="card chart-panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <h2>Curva de Enfriamiento Proyectada: Analítica vs. Runge-Kutta (RK4)</h2>
+                                    <p class="panel-sub">Evolución térmica desde pasteurización (72 °C) hasta temperatura de almacenamiento (4 °C)</p>
+                                </div>
+                                <div class="chart-legend">
+                                    <span class="leg-item"><i class="swatch sw-blue"></i> Analítica Exacta</span>
+                                    <span class="leg-item"><i class="swatch sw-purple"></i> Numérica RK4</span>
+                                    <span class="leg-item"><i class="swatch sw-gray"></i> Curva Límite (45m)</span>
+                                    <span class="leg-item"><i class="swatch sw-green"></i> Meta Inocuidad (4°C)</span>
+                                </div>
+                            </div>
+                            <div class="canvas-wrap">
+                                <canvas id="coolingChart" width="860" height="400"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- VISTA 2: SERIE NUMÉRICA RK4 -->
+                    <div id="tab-rk4" class="view-pane">
+                        <div class="card">
+                            <div class="panel-heading">
+                                <div>
+                                    <h2>Integración Numérica Paso a Paso — Método de Runge-Kutta (RK4)</h2>
+                                    <p class="panel-sub">Comparación punto a punto entre la solución exacta y la aproximación numérica de cuarto orden</p>
+                                </div>
+                            </div>
+                            <div class="table-container">
+                                <table class="tech-table" id="tabla-rk4">
+                                    <thead>
+                                        <tr>
+                                            <th>Tiempo t (min)</th>
+                                            <th>T(t) Analítica (°C)</th>
+                                            <th>T(t) Runge-Kutta RK4 (°C)</th>
+                                            <th>T(t) Límite Normativo (°C)</th>
+                                            <th>Refrigerante Tₘ(t) (°C)</th>
+                                            <th>Error Absoluto |ΔT|</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabla-rk4-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- VISTA 3: MODELO MATEMÁTICO -->
+                    <div id="tab-modelo" class="view-pane">
+                        <div class="card">
+                            <div class="panel-heading">
+                                <div>
+                                    <h2>Formulación Matemática y Sustitución con Datos Actuales</h2>
+                                    <p class="panel-sub">Resolución analítica por separación de variables y esquema numérico de cuarto orden</p>
+                                </div>
+                            </div>
+                            <div class="equations-grid">
+                                <div class="eq-card">
+                                    <div class="eq-num">01</div>
+                                    <h3>Ecuación Diferencial Ordinaria (Ley de Newton)</h3>
+                                    <p>La rapidez de enfriamiento de la leche es proporcional a la diferencia entre su temperatura instantánea y la del medio refrigerante:</p>
+                                    <div class="code-formula">
+                                        <div class="cf-sym">dT / dt = -k · (T - Tₘ)</div>
+                                        <div class="cf-val" id="math-edo-sub">dT / dt = -0.08251 · (T - 1.0)</div>
+                                    </div>
+                                </div>
+
+                                <div class="eq-card">
+                                    <div class="eq-num">02</div>
+                                    <h3>Despeje Dinámico de la Constante Térmica (k)</h3>
+                                    <p>Al integrar la ecuación y evaluar la lectura del sensor en <strong id="math-t-text">t = 5 min</strong>, se obtiene el coeficiente real del tanque:</p>
+                                    <div class="code-formula">
+                                        <div class="cf-sym">k = -(1 / t) · ln( [T(t) - Tₘ] / [T₀ - Tₘ] )</div>
+                                        <div class="cf-val" id="math-k-sub">k = -(1 / 5) · ln( [48.0 - 1.0] / [72.0 - 1.0] ) = 0.08251 min⁻¹</div>
+                                    </div>
+                                </div>
+
+                                <div class="eq-card">
+                                    <div class="eq-num">03</div>
+                                    <h3>Proyección del Tiempo para Alcanzar Consigna (4 °C)</h3>
+                                    <p>Con el coeficiente real del compresor, se despeja el instante exacto en que la leche alcanzará los 4.0 °C:</p>
+                                    <div class="code-formula">
+                                        <div class="cf-sym">t_final = -(1 / k) · ln( [T_obj - Tₘ] / [T₀ - Tₘ] )</div>
+                                        <div class="cf-val" id="math-t-sub">t_final = -(1 / 0.08251) · ln( [4.0 - 1.0] / [72.0 - 1.0] ) = 38.34 min</div>
+                                    </div>
+                                </div>
+
+                                <div class="eq-card">
+                                    <div class="eq-num">04</div>
+                                    <h3>Esquema Numérico Runge-Kutta de 4to Orden (RK4)</h3>
+                                    <p>Aproxima la solución cuando el medio refrigerante presenta oscilaciones o se modifica la transferencia térmica en línea:</p>
+                                    <div class="code-formula">
+                                        <div class="cf-sym">Tₙ₊₁ = Tₙ + (h / 6) · (k₁ + 2k₂ + 2k₃ + k₄)</div>
+                                        <div class="cf-val" id="math-rk4-sub">Paso h = 1.0 min | Dif. media: 0.00001 °C</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- VISTA 4: BITÁCORA DE LOTES -->
+                    <div id="tab-bitacora" class="view-pane">
+                        <div class="card">
+                            <div class="panel-heading">
+                                <div>
+                                    <h2>Bitácora de Lotes y Degradación Histórica del Coeficiente k</h2>
+                                    <p class="panel-sub">Seguimiento estadístico para detección temprana de desgaste en compresores</p>
+                                </div>
+                                <button type="button" class="btn btn-outline" onclick="limpiarHistorial()">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                    </svg>
+                                    <span>Depurar Bitácora</span>
+                                </button>
+                            </div>
+                            <div class="canvas-wrap-sm">
+                                <canvas id="historyChart" width="760" height="230"></canvas>
+                            </div>
+                            <div class="table-container">
+                                <table class="tech-table">
+                                    <thead>
+                                        <tr>
+                                            <th>ID Lote</th>
+                                            <th>Unidad</th>
+                                            <th>Lectura T(5)</th>
+                                            <th>Coeficiente k</th>
+                                            <th>Tiempo a 4°C</th>
+                                            <th>Diagnóstico</th>
+                                            <th>Acción Operativa</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabla-historial-body"></tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
                 </div>
-            </aside>
-
-            <!-- Panel Derecho: Métricas, Gráfica y Ecuaciones -->
-            <section class="main-panel">
-                <div class="kpi-grid">
-                    <div class="card kpi-card">
-                        <div class="kpi-top">
-                            <span class="kpi-title">Constante Térmica (k)</span>
-                            <span class="tag-meta">Experimental</span>
-                        </div>
-                        <div class="kpi-value" id="kpi-k-real">0.08251 <small>min⁻¹</small></div>
-                        <div class="kpi-sub">
-                            Umbral mínimo: <strong id="kpi-k-min">0.07030 min⁻¹</strong>
-                        </div>
-                    </div>
-
-                    <div class="card kpi-card">
-                        <div class="kpi-top">
-                            <span class="kpi-title">Tiempo Estimado (Analítico)</span>
-                            <span class="tag-meta">Meta 4°C</span>
-                        </div>
-                        <div class="kpi-value" id="kpi-t-pred">38.34 <small>min</small></div>
-                        <div class="kpi-sub" id="kpi-t-diff">
-                            6.66 min de margen respecto al límite
-                        </div>
-                    </div>
-
-                    <div class="card kpi-card">
-                        <div class="kpi-top">
-                            <span class="kpi-title">Tiempo Estimado (RK4)</span>
-                            <span class="tag-meta">Numérico</span>
-                        </div>
-                        <div class="kpi-value" id="kpi-t-rk4">38.34 <small>min</small></div>
-                        <div class="kpi-sub" id="kpi-temp-limite">
-                            Temp. proyectada a 45 min: <strong>2.73 °C</strong>
-                        </div>
-                    </div>
-
-                    <div class="card kpi-card">
-                        <div class="kpi-top">
-                            <span class="kpi-title">Rendimiento Térmico</span>
-                            <span class="tag-meta">Compresor</span>
-                        </div>
-                        <div class="kpi-value" id="kpi-eficiencia">117.4%</div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" id="kpi-eficiencia-bar" style="width: 100%;"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Gráfica Principal -->
-                <div class="card chart-card">
-                    <div class="card-header">
-                        <div>
-                            <h3>Proyección de Enfriamiento: Solución Analítica vs. Runge-Kutta (RK4)</h3>
-                            <p class="chart-subtitle">Curva de decaimiento térmico <span class="math">T(t) = Tₘ + (T₀ - Tₘ)e⁻ᵏᵗ</span> comparada con el límite normativo</p>
-                        </div>
-                        <div class="chart-legend-custom">
-                            <span class="legend-item"><i class="line-swatch swatch-analitica"></i> Modelo Analítico</span>
-                            <span class="legend-item"><i class="line-swatch swatch-rk4"></i> Integración RK4</span>
-                            <span class="legend-item"><i class="line-swatch swatch-estandar"></i> Curva Límite (k mín)</span>
-                            <span class="legend-item"><i class="line-swatch swatch-meta"></i> Consigna (4°C)</span>
-                        </div>
-                    </div>
-                    <div class="canvas-container">
-                        <canvas id="coolingChart" width="850" height="365"></canvas>
-                    </div>
-                </div>
-
-                <!-- Formulación Matemática en Tiempo Real -->
-                <div class="card math-card">
-                    <div class="card-header">
-                        <h3>Formulación Termodinámica y Sustitución en Tiempo Real</h3>
-                        <span class="tag-meta">Ley de Enfriamiento de Newton</span>
-                    </div>
-                    <div class="math-steps-grid">
-                        <div class="math-step">
-                            <h4>1. Ecuación Diferencial Ordinaria</h4>
-                            <div class="formula-box">
-                                <div class="formula-main">dT / dt = -k · (T - Tₘ)</div>
-                                <div class="formula-sub" id="math-edo-sub">dT / dt = -0.08251 · (T - 1.0)</div>
-                            </div>
-                            <p>Tasa instantánea de transferencia de calor entre el lote de leche y el fluido refrigerante.</p>
-                        </div>
-
-                        <div class="math-step">
-                            <h4>2. Cálculo de la Constante de Decaimiento <span class="math">k</span></h4>
-                            <div class="formula-box">
-                                <div class="formula-main">k = -(1 / t) · ln( [T(t) - Tₘ] / [T₀ - Tₘ] )</div>
-                                <div class="formula-sub" id="math-k-sub">k = -(1 / 5) · ln( [48.0 - 1.0] / [72.0 - 1.0] ) = 0.08251 min⁻¹</div>
-                            </div>
-                            <p>Coeficiente determinado dinámicamente a partir de la lectura en <span id="math-t-text">t = 5 min</span>.</p>
-                        </div>
-
-                        <div class="math-step">
-                            <h4>3. Proyección de Tiempo a Consigna (<span class="math">4°C</span>)</h4>
-                            <div class="formula-box">
-                                <div class="formula-main">t_final = -(1 / k) · ln( [T_obj - Tₘ] / [T₀ - Tₘ] )</div>
-                                <div class="formula-sub" id="math-t-sub">t_final = -(1 / 0.08251) · ln( [4.0 - 1.0] / [72.0 - 1.0] ) = 38.34 min</div>
-                            </div>
-                            <p>Tiempo requerido para alcanzar la temperatura segura de almacenamiento.</p>
-                        </div>
-
-                        <div class="math-step">
-                            <h4>4. Aproximación Numérica Runge-Kutta (RK4)</h4>
-                            <div class="formula-box">
-                                <div class="formula-main">Tₙ₊₁ = Tₙ + (h / 6)·(k₁ + 2k₂ + 2k₃ + k₄)</div>
-                                <div class="formula-sub" id="math-rk4-sub">Paso h = 1.0 min | Error medio absoluto: 0.000012 °C</div>
-                            </div>
-                            <p>Resolución numérica empleada ante variaciones en el medio refrigerante o activación de equipos auxiliares.</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
+            </div>
         </div>
+    </div>
 
-        <!-- Tablas Inferiores -->
-        <div class="bottom-grid">
-            <section class="card">
-                <div class="card-header">
-                    <div>
-                        <h3>Serie Temporal: Solución Analítica vs. Método Numérico RK4</h3>
-                        <p class="chart-subtitle">Verificación de convergencia y seguimiento minuto a minuto</p>
-                    </div>
-                </div>
-                <div class="table-wrapper">
-                    <table class="data-table" id="tabla-rk4">
-                        <thead>
-                            <tr>
-                                <th>Tiempo (min)</th>
-                                <th>T(t) Analítica</th>
-                                <th>T(t) Numérica RK4</th>
-                                <th>T(t) Límite Normativo</th>
-                                <th>Medio Tₘ(t)</th>
-                                <th>Error |Analítica - RK4|</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabla-rk4-body"></tbody>
-                    </table>
-                </div>
-            </section>
-
-            <section class="card">
-                <div class="card-header">
-                    <div>
-                        <h3>Bitácora de Lotes y Tendencia del Coeficiente <span class="math">k</span></h3>
-                        <p class="chart-subtitle">Control estadístico de eficiencia para mantenimiento preventivo de compresores</p>
-                    </div>
-                    <button type="button" class="btn btn-outline-sm" onclick="limpiarHistorial()">Limpiar Bitácora</button>
-                </div>
-
-                <div class="canvas-container-sm">
-                    <canvas id="historyChart" width="600" height="205"></canvas>
-                </div>
-
-                <div class="table-wrapper">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Lote</th>
-                                <th>Unidad</th>
-                                <th>Lectura T(5)</th>
-                                <th>Coeficiente k</th>
-                                <th>Tiempo a 4°C</th>
-                                <th>Estado</th>
-                                <th>Acción Registrada</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabla-historial-body"></tbody>
-                    </table>
-                </div>
-            </section>
-        </div>
-    </main>
-
-    <footer class="footer">
-        <div class="container footer-inner">
-            <div>Lácteos del Valle — Sistema de Control de Calidad y Monitoreo Termodinámico</div>
-            <div>Modelo Predictivo Basado en Ecuaciones Diferenciales Ordinarias (Ley de Enfriamiento de Newton / RK4)</div>
-        </div>
-    </footer>
-
-    <script src="/static/js/main.js?v=2"></script>
+    <script src="/static/js/main.js?v=3"></script>
 </body>
 </html>

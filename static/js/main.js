@@ -1,13 +1,26 @@
 // =========================================================================
-// TCC: SISTEMA PREDICTIVO DE ENFRIAMIENTO - LÁCTEOS DEL VALLE
-// Lógica Frontend, Gráficas Canvas Interactivas y Simulación de Termopar
+// LÁCTEOS DEL VALLE — SISTEMA DE CONTROL TÉRMICO Y PREDICCIÓN
+// Lógica de Interfaz, Gráficas de Ingeniería y Telemetría
 // =========================================================================
 
 let ultimoResultado = null;
 let historialGlobal = [];
 let simTimer = null;
 
-// Configuración de escenarios de prueba rápida
+// Iconos vectoriales SVG para diagnóstico
+const ICONOS_DIAGNOSTICO = {
+    success: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#15803d" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
+    warning: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#b45309" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>`,
+    danger: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#b91c1c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>`
+};
+
+const TITULOS_VISTAS = {
+    "tab-monitoreo": "Monitoreo y Predicción de Enfriamiento",
+    "tab-rk4": "Serie Numérica Runge-Kutta de 4to Orden (RK4)",
+    "tab-modelo": "Formulación Matemática y Sustitución en Tiempo Real",
+    "tab-bitacora": "Bitácora de Lotes y Control de Degradación Térmica"
+};
+
 const ESCENARIOS = {
     optimo: {
         tanque: "Tanque Principal #1",
@@ -64,21 +77,40 @@ document.addEventListener("DOMContentLoaded", () => {
     cargarHistorial();
 
     window.addEventListener("resize", () => {
-        if (ultimoResultado) {
-            dibujarGraficaEnfriamiento(ultimoResultado);
-        }
-        if (historialGlobal.length > 0) {
-            dibujarGraficaHistorial(historialGlobal);
-        }
+        if (ultimoResultado) dibujarGraficaEnfriamiento(ultimoResultado);
+        if (historialGlobal.length > 0) dibujarGraficaHistorial(historialGlobal);
     });
 });
+
+function cambiarVista(tabId, btnEl) {
+    document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
+    if (btnEl) btnEl.classList.add("active");
+
+    document.querySelectorAll(".view-pane").forEach(pane => pane.classList.remove("active"));
+    const target = document.getElementById(tabId);
+    if (target) target.classList.add("active");
+
+    const viewTitle = document.getElementById("view-title");
+    if (viewTitle && TITULOS_VISTAS[tabId]) {
+        viewTitle.textContent = TITULOS_VISTAS[tabId];
+    }
+
+    // Redibujar lienzos al hacerse visibles
+    setTimeout(() => {
+        if (tabId === "tab-monitoreo" && ultimoResultado) {
+            dibujarGraficaEnfriamiento(ultimoResultado);
+        } else if (tabId === "tab-bitacora" && historialGlobal.length > 0) {
+            dibujarGraficaHistorial(historialGlobal);
+        }
+    }, 20);
+}
 
 function cargarEscenario(nombre) {
     detenerSimulacionTermopar();
     const esc = ESCENARIOS[nombre];
     if (!esc) return;
 
-    document.querySelectorAll(".btn-chip").forEach(btn => btn.classList.remove("active"));
+    document.querySelectorAll(".preset-btn").forEach(btn => btn.classList.remove("active"));
     const btnActivo = document.getElementById(`preset-${nombre}`);
     if (btnActivo) btnActivo.classList.add("active");
 
@@ -141,10 +173,12 @@ async function ejecutarCalculo(event = null, guardarHistorial = false) {
         poblarTablaRK4(data);
 
         if (guardarHistorial) {
-            cargarHistorial();
+            await cargarHistorial();
+            const btnBitacora = document.querySelector('[data-tab="tab-bitacora"]');
+            cambiarVista("tab-bitacora", btnBitacora);
         }
     } catch (err) {
-        console.error("Error comunicando con el servidor Flask:", err);
+        console.error("Error comunicando con el servidor:", err);
     }
 }
 
@@ -154,8 +188,8 @@ function guardarLoteActual() {
 
 function mostrarErrorBanner(mensaje) {
     const banner = document.getElementById("alert-banner");
-    banner.className = "alert-banner alert-danger";
-    document.getElementById("alert-icon").textContent = "ERR";
+    banner.className = "diagnostic-bar diag-danger";
+    document.getElementById("alert-icon-wrap").innerHTML = ICONOS_DIAGNOSTICO.danger;
     document.getElementById("alert-title").textContent = "ERROR DE VALIDACIÓN EN PARÁMETROS";
     document.getElementById("alert-message").textContent = mensaje;
     document.getElementById("alert-rec-text").textContent = "Verifique que T₀ > T(t) > T_obj > Tₘ y que t > 0.";
@@ -166,53 +200,55 @@ function actualizarInterfaz(data) {
     const r = data.resultados;
     const s = data.series;
 
-    // 1. Banner de Diagnóstico
+    document.getElementById("header-unit-label").textContent = p.tanque;
+
+    // 1. Barra de Diagnóstico
     const banner = document.getElementById("alert-banner");
-    const icon = document.getElementById("alert-icon");
+    const iconWrap = document.getElementById("alert-icon-wrap");
     const title = document.getElementById("alert-title");
     const tag = document.getElementById("alert-tag");
     const msg = document.getElementById("alert-message");
     const rec = document.getElementById("alert-rec-text");
     const btnQuickAux = document.getElementById("btn-quick-aux");
 
-    banner.className = `alert-banner alert-${r.nivel}`;
-    tag.textContent = `Lectura en t = ${p.t_muestra} min | ${p.tanque}`;
+    banner.className = `diagnostic-bar diag-${r.nivel}`;
+    iconWrap.innerHTML = ICONOS_DIAGNOSTICO[r.nivel] || ICONOS_DIAGNOSTICO.success;
+    tag.textContent = `Lectura t = ${p.t_muestra.toFixed(1)} min · ${p.tanque}`;
 
     if (r.nivel === "danger") {
-        icon.textContent = "CRÍTICO";
         title.textContent = p.activar_auxiliar
-            ? `DESVIACIÓN TÉRMICA DETECTADA (ENFRIAMIENTO AUXILIAR ACTIVO)`
-            : `ALERTA DE PROCESO: TIEMPO PROYECTADO EXCEDE LÍMITE NORMATIVO`;
-        btnQuickAux.style.display = p.activar_auxiliar ? "none" : "inline-block";
+            ? "DESVIACIÓN TÉRMICA EN CORRECCIÓN (UNIDAD AUXILIAR ACTIVA)"
+            : "ALERTA DE PROCESO: TIEMPO PROYECTADO EXCEDE LÍMITE DE 45 MIN";
+        btnQuickAux.style.display = p.activar_auxiliar ? "none" : "inline-flex";
     } else if (r.nivel === "warning") {
-        icon.textContent = "AVISO";
-        title.textContent = `PRECAUCIÓN OPERATIVA: MARGEN DE ENFRIAMIENTO REDUCIDO`;
-        btnQuickAux.style.display = p.activar_auxiliar ? "none" : "inline-block";
+        title.textContent = "PRECAUCIÓN OPERATIVA: MARGEN DE ENFRIAMIENTO REDUCIDO";
+        btnQuickAux.style.display = p.activar_auxiliar ? "none" : "inline-flex";
     } else {
-        icon.textContent = "OK";
-        title.textContent = `DIAGNÓSTICO DEL CICLO: DENTRO DE PARÁMETROS NORMATIVOS`;
+        title.textContent = "PROCESO DENTRO DE PARÁMETROS NORMATIVOS";
         btnQuickAux.style.display = "none";
     }
 
     msg.textContent = r.mensaje_alerta;
     rec.textContent = r.recomendacion;
 
-    // 2. Tarjetas KPI
+    // 2. Indicadores (KPIs)
     document.getElementById("kpi-k-real").innerHTML = `${r.k_real.toFixed(5)} <small>min⁻¹</small>`;
     document.getElementById("kpi-k-min").textContent = `${r.k_minimo.toFixed(5)} min⁻¹`;
 
     document.getElementById("kpi-t-pred").innerHTML = `${r.t_predicho.toFixed(2)} <small>min</small>`;
     const diffEl = document.getElementById("kpi-t-diff");
     if (r.diferencia_tiempo > 0) {
-        diffEl.innerHTML = `<strong style="color:#b91c1c;">+${r.diferencia_tiempo.toFixed(2)} min sobre el límite (${p.t_limite} min)</strong>`;
+        diffEl.innerHTML = `<strong style="color:#b91c1c;">+${r.diferencia_tiempo.toFixed(2)} min sobre el límite (${p.t_limite}m)</strong>`;
     } else {
-        diffEl.innerHTML = `<strong style="color:#15803d;">${Math.abs(r.diferencia_tiempo).toFixed(2)} min de margen (${p.t_limite} min)</strong>`;
+        diffEl.innerHTML = `<strong style="color:#15803d;">${Math.abs(r.diferencia_tiempo).toFixed(2)} min de margen (${p.t_limite}m)</strong>`;
     }
 
-    const tRk4Texto = r.t_predicho_rk4 !== null ? `${r.t_predicho_rk4.toFixed(2)} <small>min</small>` : `> ${s.tiempos[s.tiempos.length - 1]} <small>min</small>`;
+    const tRk4Texto = r.t_predicho_rk4 !== null
+        ? `${r.t_predicho_rk4.toFixed(2)} <small>min</small>`
+        : `> ${s.tiempos[s.tiempos.length - 1]} <small>min</small>`;
     document.getElementById("kpi-t-rk4").innerHTML = tRk4Texto;
     document.getElementById("kpi-temp-limite").innerHTML =
-        `Temp. analítica a ${p.t_limite} min: <strong>${r.T_en_limite.toFixed(2)} °C</strong>`;
+        `Temp. proyectada a ${p.t_limite} min: <strong>${r.T_en_limite.toFixed(2)} °C</strong>`;
 
     document.getElementById("kpi-eficiencia").textContent = `${r.eficiencia_pct.toFixed(1)}%`;
     const bar = document.getElementById("kpi-eficiencia-bar");
@@ -220,10 +256,10 @@ function actualizarInterfaz(data) {
     bar.style.width = `${widthPct}%`;
     bar.style.background = r.nivel === "danger" ? "#b91c1c" : (r.nivel === "warning" ? "#b45309" : "#15803d");
 
-    // 3. Visualizador del Tanque
-    actualizarVisualizadorTanque(p.T0, p.T_muestra, p.T_meta, p.t_muestra, p.activar_auxiliar);
+    // 3. Esquema Técnico SVG
+    actualizarEsquemaTanque(p.T0, p.T_muestra, p.T_meta, p.t_muestra, p.activar_auxiliar);
 
-    // 4. Sustitución Matemática Paso a Paso
+    // 4. Sustitución Matemática
     document.getElementById("math-edo-sub").textContent =
         `dT / dt = -${r.k_real.toFixed(5)} · (T - ${p.Tm.toFixed(1)})`;
 
@@ -236,10 +272,10 @@ function actualizarInterfaz(data) {
 
     const errMedio = s.errores_abs.reduce((a, b) => a + b, 0) / s.errores_abs.length;
     document.getElementById("math-rk4-sub").textContent =
-        `Paso h = ${p.h_rk4} min | T_RK4(4°C) = ${r.t_predicho_rk4 || "--"} min | Dif. media Analítica vs RK4: ${errMedio.toFixed(5)} °C`;
+        `Paso h = ${p.h_rk4} min | T_RK4(4°C) = ${r.t_predicho_rk4 || "--"} min | Dif. media: ${errMedio.toFixed(5)} °C`;
 }
 
-function actualizarVisualizadorTanque(T0, T_actual, T_meta, tiempoActual, auxActivo) {
+function actualizarEsquemaTanque(T0, T_actual, T_meta, tiempoActual, auxActivo) {
     document.getElementById("sim-clock").textContent = `t = ${tiempoActual.toFixed(1)} min`;
     document.getElementById("tank-temp-display").textContent = `${T_actual.toFixed(1)}°C`;
     document.getElementById("vis-T0").textContent = `${T0.toFixed(1)} °C`;
@@ -248,34 +284,36 @@ function actualizarVisualizadorTanque(T0, T_actual, T_meta, tiempoActual, auxAct
 
     const visAux = document.getElementById("vis-aux");
     if (auxActivo) {
-        visAux.textContent = "ACTIVA (+45% k)";
-        visAux.className = "status-on";
+        visAux.textContent = "ACTIVO (+45%)";
+        visAux.className = "badge-on";
     } else {
-        visAux.textContent = "INACTIVA";
-        visAux.className = "status-off";
+        visAux.textContent = "INACTIVO";
+        visAux.className = "badge-off";
     }
 
-    const liquid = document.getElementById("tank-liquid");
-    if (T_actual >= 52) {
-        liquid.style.background = "#b91c1c";
-    } else if (T_actual >= 25) {
-        liquid.style.background = "#d97706";
-    } else {
-        liquid.style.background = "#0f4c81";
+    const svgLiquid = document.getElementById("svg-tank-liquid");
+    if (svgLiquid) {
+        if (T_actual >= 52) {
+            svgLiquid.setAttribute("fill", "#b91c1c");
+        } else if (T_actual >= 25) {
+            svgLiquid.setAttribute("fill", "#d97706");
+        } else {
+            svgLiquid.setAttribute("fill", "#0f4c81");
+        }
     }
 }
 
 // =========================================================================
-// SIMULADOR INTERACTIVO DE CAPTURA DE TERMOPAR (0 -> 5 MIN)
+// SIMULADOR INTERACTIVO DE SONDA TERMOPAR (0 -> 5 MIN)
 // =========================================================================
 function detenerSimulacionTermopar() {
     if (simTimer) {
         clearInterval(simTimer);
         simTimer = null;
     }
-    const btn = document.getElementById("btn-simular-termopar");
-    if (btn) {
-        btn.textContent = "Simular Lectura de Termopar (0 → 5 min)";
+    const btnText = document.getElementById("btn-sim-text");
+    if (btnText) {
+        btnText.textContent = "Simular Termopar (0 → 5 min)";
     }
 }
 
@@ -286,8 +324,12 @@ function iniciarSimulacionTermopar() {
     }
     if (!ultimoResultado) return;
 
-    const btn = document.getElementById("btn-simular-termopar");
-    btn.textContent = "Detener Simulación";
+    // Asegurar que la vista principal esté activa
+    const btnMonitoreo = document.querySelector('[data-tab="tab-monitoreo"]');
+    cambiarVista("tab-monitoreo", btnMonitoreo);
+
+    const btnText = document.getElementById("btn-sim-text");
+    if (btnText) btnText.textContent = "Detener Simulación";
 
     const p = ultimoResultado.parametros;
     const k = ultimoResultado.resultados.k_real;
@@ -302,7 +344,7 @@ function iniciarSimulacionTermopar() {
             detenerSimulacionTermopar();
         }
         const tempSim = p.Tm + (p.T0 - p.Tm) * Math.exp(-k * tSim);
-        actualizarVisualizadorTanque(p.T0, tempSim, p.T_meta, tSim, p.activar_auxiliar);
+        actualizarEsquemaTanque(p.T0, tempSim, p.T_meta, tSim, p.activar_auxiliar);
         dibujarGraficaEnfriamiento(ultimoResultado, tSim, tempSim);
     }, 90);
 }
@@ -315,11 +357,10 @@ function dibujarGraficaEnfriamiento(data, tCursorSim = null, tempCursorSim = nul
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
 
-    // Ajuste de resolución para pantallas Retina / HiDPI
     const dpr = window.devicePixelRatio || 1;
     const rect = canvas.parentElement.getBoundingClientRect();
-    const width = Math.max(rect.width, 620);
-    const height = 370;
+    const width = Math.max(rect.width, 580);
+    const height = 390;
 
     canvas.width = width * dpr;
     canvas.height = height * dpr;
@@ -329,7 +370,7 @@ function dibujarGraficaEnfriamiento(data, tCursorSim = null, tempCursorSim = nul
 
     ctx.clearRect(0, 0, width, height);
 
-    const pad = { top: 24, right: 32, bottom: 44, left: 56 };
+    const pad = { top: 22, right: 28, bottom: 42, left: 54 };
     const plotW = width - pad.left - pad.right;
     const plotH = height - pad.top - pad.bottom;
 
@@ -344,22 +385,22 @@ function dibujarGraficaEnfriamiento(data, tCursorSim = null, tempCursorSim = nul
     const xToPx = (t) => pad.left + (t / tMax) * plotW;
     const yToPx = (temp) => pad.top + plotH - ((temp - yMin) / (yMax - yMin)) * plotH;
 
-    // Fondo del área de trazado
-    ctx.fillStyle = "#f8fafc";
+    // Fondo técnico
+    ctx.fillStyle = "#ffffff";
     ctx.fillRect(pad.left, pad.top, plotW, plotH);
 
-    // Zona sombreada de exceso de tiempo (t > t_limite)
+    // Zona fuera de límite normativo (t > t_limite)
     if (p.t_limite < tMax) {
         const xLim = xToPx(p.t_limite);
-        ctx.fillStyle = "rgba(220, 38, 38, 0.05)";
+        ctx.fillStyle = "rgba(185, 28, 28, 0.04)";
         ctx.fillRect(xLim, pad.top, pad.left + plotW - xLim, plotH);
     }
 
-    // Cuadrícula horizontal (Temperaturas)
+    // Cuadrícula horizontal
     ctx.strokeStyle = "#e2e8f0";
     ctx.lineWidth = 1;
     ctx.fillStyle = "#64748b";
-    ctx.font = "11px sans-serif";
+    ctx.font = "11px 'JetBrains Mono', monospace";
     ctx.textAlign = "right";
 
     const pasosY = 6;
@@ -373,7 +414,7 @@ function dibujarGraficaEnfriamiento(data, tCursorSim = null, tempCursorSim = nul
         ctx.fillText(`${valY.toFixed(0)}°C`, pad.left - 8, py + 4);
     }
 
-    // Cuadrícula vertical (Tiempos)
+    // Cuadrícula vertical
     ctx.textAlign = "center";
     const pasoT = tMax <= 60 ? 5 : 10;
     for (let t = 0; t <= tMax; t += pasoT) {
@@ -385,55 +426,59 @@ function dibujarGraficaEnfriamiento(data, tCursorSim = null, tempCursorSim = nul
         ctx.fillText(`${t}m`, px, pad.top + plotH + 18);
     }
 
-    // Etiquetas de ejes
+    // Marco del gráfico
+    ctx.strokeStyle = "#cbd5e1";
+    ctx.strokeRect(pad.left, pad.top, plotW, plotH);
+
+    // Títulos de ejes
     ctx.fillStyle = "#334155";
-    ctx.font = "bold 12px sans-serif";
-    ctx.fillText("Tiempo de Enfriamiento t (minutos)", pad.left + plotW / 2, height - 8);
+    ctx.font = "600 11.5px 'Inter', sans-serif";
+    ctx.fillText("Tiempo de Proceso t (minutos)", pad.left + plotW / 2, height - 8);
 
     ctx.save();
-    ctx.translate(16, pad.top + plotH / 2);
+    ctx.translate(14, pad.top + plotH / 2);
     ctx.rotate(-Math.PI / 2);
-    ctx.fillText("Temperatura T (°C)", 0, 0);
+    ctx.fillText("Temperatura (°C)", 0, 0);
     ctx.restore();
 
-    // Línea horizontal de Temperatura Objetivo (4°C)
+    // Línea de consigna (4°C)
     const yMeta = yToPx(p.T_meta);
     ctx.save();
-    ctx.strokeStyle = "#16a34a";
-    ctx.lineWidth = 1.8;
+    ctx.strokeStyle = "#15803d";
+    ctx.lineWidth = 1.5;
     ctx.setLineDash([6, 4]);
     ctx.beginPath();
     ctx.moveTo(pad.left, yMeta);
     ctx.lineTo(pad.left + plotW, yMeta);
     ctx.stroke();
     ctx.fillStyle = "#15803d";
-    ctx.font = "bold 11px sans-serif";
+    ctx.font = "600 11px 'Inter', sans-serif";
     ctx.textAlign = "left";
-    ctx.fillText(`Meta Inocuidad (${p.T_meta}°C)`, pad.left + 8, yMeta - 6);
+    ctx.fillText(`Consigna (${p.T_meta.toFixed(1)} °C)`, pad.left + 8, yMeta - 6);
     ctx.restore();
 
-    // Línea vertical de Tiempo Límite (45 min)
+    // Línea vertical de límite (45 min)
     if (p.t_limite <= tMax) {
         const xLim = xToPx(p.t_limite);
         ctx.save();
-        ctx.strokeStyle = "#dc2626";
-        ctx.lineWidth = 1.8;
+        ctx.strokeStyle = "#b91c1c";
+        ctx.lineWidth = 1.5;
         ctx.setLineDash([5, 4]);
         ctx.beginPath();
         ctx.moveTo(xLim, pad.top);
         ctx.lineTo(xLim, pad.top + plotH);
         ctx.stroke();
-        ctx.fillStyle = "#dc2626";
-        ctx.font = "bold 11px sans-serif";
+        ctx.fillStyle = "#b91c1c";
+        ctx.font = "600 11px 'Inter', sans-serif";
         ctx.textAlign = "right";
         ctx.fillText(`Límite (${p.t_limite} min)`, xLim - 6, pad.top + 14);
         ctx.restore();
     }
 
-    // 1. Curva Estándar Límite (gris punteada)
+    // 1. Curva límite estándar
     ctx.save();
     ctx.strokeStyle = "#94a3b8";
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 1.8;
     ctx.setLineDash([4, 4]);
     ctx.beginPath();
     s.tiempos.forEach((t, i) => {
@@ -445,10 +490,10 @@ function dibujarGraficaEnfriamiento(data, tCursorSim = null, tempCursorSim = nul
     ctx.stroke();
     ctx.restore();
 
-    // 2. Curva Analítica Exacta (Azul)
+    // 2. Curva Analítica Exacta
     ctx.save();
-    ctx.strokeStyle = "#0284c7";
-    ctx.lineWidth = 3;
+    ctx.strokeStyle = "#0f4c81";
+    ctx.lineWidth = 2.6;
     ctx.beginPath();
     s.tiempos.forEach((t, i) => {
         const px = xToPx(t);
@@ -459,11 +504,11 @@ function dibujarGraficaEnfriamiento(data, tCursorSim = null, tempCursorSim = nul
     ctx.stroke();
     ctx.restore();
 
-    // 3. Curva Numérica RK4 (Violeta)
+    // 3. Curva Numérica RK4
     ctx.save();
-    ctx.strokeStyle = "#7c3aed";
-    ctx.lineWidth = 2.2;
-    ctx.setLineDash([8, 4]);
+    ctx.strokeStyle = "#6d28d9";
+    ctx.lineWidth = 2.0;
+    ctx.setLineDash([7, 4]);
     ctx.beginPath();
     s.tiempos.forEach((t, i) => {
         const px = xToPx(t);
@@ -474,48 +519,48 @@ function dibujarGraficaEnfriamiento(data, tCursorSim = null, tempCursorSim = nul
     ctx.stroke();
     ctx.restore();
 
-    // Punto de muestreo del termopar en t = t_muestra (ej. 5 min)
+    // Punto de lectura del termopar (t = 5 min)
     const xMuestra = xToPx(p.t_muestra);
     const yMuestra = yToPx(p.T_muestra);
-    ctx.fillStyle = "#f97316";
+    ctx.fillStyle = "#d97706";
     ctx.beginPath();
-    ctx.arc(xMuestra, yMuestra, 5.5, 0, Math.PI * 2);
+    ctx.arc(xMuestra, yMuestra, 5, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 1.8;
     ctx.stroke();
 
     ctx.fillStyle = "#0f172a";
-    ctx.font = "bold 11px sans-serif";
+    ctx.font = "600 11px 'JetBrains Mono', monospace";
     ctx.textAlign = "left";
-    ctx.fillText(`Termopar (${p.t_muestra}m, ${p.T_muestra}°C)`, xMuestra + 8, yMuestra - 6);
+    ctx.fillText(`PT100 (${p.t_muestra}m, ${p.T_muestra}°C)`, xMuestra + 8, yMuestra - 6);
 
-    // Punto donde se alcanza la temperatura meta (4°C)
+    // Punto proyectado de llegada a 4°C
     if (r.t_predicho <= tMax) {
         const xPred = xToPx(r.t_predicho);
         const yPred = yToPx(p.T_meta);
-        ctx.fillStyle = r.nivel === "danger" ? "#dc2626" : "#16a34a";
+        ctx.fillStyle = r.nivel === "danger" ? "#b91c1c" : "#15803d";
         ctx.beginPath();
-        ctx.arc(xPred, yPred, 6, 0, Math.PI * 2);
+        ctx.arc(xPred, yPred, 5.5, 0, Math.PI * 2);
         ctx.fill();
         ctx.strokeStyle = "#ffffff";
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 1.8;
         ctx.stroke();
 
         ctx.fillStyle = r.nivel === "danger" ? "#b91c1c" : "#15803d";
-        ctx.font = "bold 11px sans-serif";
+        ctx.font = "600 11px 'JetBrains Mono', monospace";
         ctx.textAlign = xPred > plotW * 0.78 ? "right" : "left";
         const offsetTexto = xPred > plotW * 0.78 ? -8 : 8;
-        ctx.fillText(`T=4°C (${r.t_predicho.toFixed(1)} min)`, xPred + offsetTexto, yPred - 10);
+        ctx.fillText(`t = ${r.t_predicho.toFixed(1)}m`, xPred + offsetTexto, yPred - 9);
     }
 
-    // Si hay simulación en vivo del termopar, dibujar cursor animado
+    // Cursor de simulación en vivo
     if (tCursorSim !== null && tempCursorSim !== null) {
         const xSim = xToPx(tCursorSim);
         const ySim = yToPx(tempCursorSim);
-        ctx.fillStyle = "#ef4444";
+        ctx.fillStyle = "#b91c1c";
         ctx.beginPath();
-        ctx.arc(xSim, ySim, 7, 0, Math.PI * 2);
+        ctx.arc(xSim, ySim, 6.5, 0, Math.PI * 2);
         ctx.fill();
         ctx.strokeStyle = "#ffffff";
         ctx.lineWidth = 2;
@@ -543,7 +588,7 @@ function poblarTablaRK4(data) {
         }
 
         tr.innerHTML = `
-            <td><strong>${t.toFixed(1)} min</strong> ${Math.abs(t - p.t_muestra) < 0.001 ? '<span class="pill pill-warning">Lectura Termopar</span>' : ""}</td>
+            <td><strong>${t.toFixed(1)} min</strong> ${Math.abs(t - p.t_muestra) < 0.001 ? '<span class="pill pill-warning">Muestreo PT100</span>' : ""}</td>
             <td>${s.analitica[i].toFixed(3)} °C</td>
             <td><strong>${s.rk4[i].toFixed(3)} °C</strong></td>
             <td>${s.estandar[i].toFixed(3)} °C</td>
@@ -555,7 +600,7 @@ function poblarTablaRK4(data) {
 }
 
 // =========================================================================
-// HISTORIAL DE LOTES Y GRÁFICA DE DEGRADACIÓN DEL FACTOR k
+// BITÁCORA DE LOTES Y GRÁFICA DE TENDENCIA DE k
 // =========================================================================
 async function cargarHistorial() {
     try {
@@ -565,7 +610,7 @@ async function cargarHistorial() {
         poblarTablaHistorial(historialGlobal);
         dibujarGraficaHistorial(historialGlobal);
     } catch (err) {
-        console.error("Error cargando historial:", err);
+        console.error("Error cargando bitácora:", err);
     }
 }
 
@@ -574,7 +619,7 @@ async function limpiarHistorial() {
         await fetch("/api/historial/limpiar", { method: "POST" });
         cargarHistorial();
     } catch (err) {
-        console.error("Error limpiando historial:", err);
+        console.error("Error limpiando bitácora:", err);
     }
 }
 
@@ -584,7 +629,7 @@ function poblarTablaHistorial(lista) {
     tbody.innerHTML = "";
 
     if (lista.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#64748b;">Sin lotes registrados. Use "+ Registrar Lote en Historial".</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#64748b;">Sin registros en la bitácora.</td></tr>`;
         return;
     }
 
@@ -598,7 +643,7 @@ function poblarTablaHistorial(lista) {
             <td><strong>${item.id}</strong></td>
             <td>${item.tanque}</td>
             <td>${item.T_muestra.toFixed(1)} °C</td>
-            <td><strong>${item.k.toFixed(5)}</strong></td>
+            <td><strong>${item.k.toFixed(5)} min⁻¹</strong></td>
             <td>${item.t_predicho.toFixed(1)} min</td>
             <td><span class="pill ${pillClass}">${item.estado}</span></td>
             <td>${item.accion}</td>
@@ -612,12 +657,12 @@ function dibujarGraficaHistorial(listaInversa) {
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
 
-    const lista = [...listaInversa].reverse(); // Orden cronológico
+    const lista = [...listaInversa].reverse();
 
     const dpr = window.devicePixelRatio || 1;
     const rect = canvas.parentElement.getBoundingClientRect();
-    const width = Math.max(rect.width, 400);
-    const height = 200;
+    const width = Math.max(rect.width, 460);
+    const height = 220;
 
     canvas.width = width * dpr;
     canvas.height = height * dpr;
@@ -629,11 +674,11 @@ function dibujarGraficaHistorial(listaInversa) {
 
     if (lista.length === 0) return;
 
-    const pad = { top: 22, right: 24, bottom: 34, left: 58 };
+    const pad = { top: 22, right: 26, bottom: 34, left: 62 };
     const plotW = width - pad.left - pad.right;
     const plotH = height - pad.top - pad.bottom;
 
-    ctx.fillStyle = "#f8fafc";
+    ctx.fillStyle = "#ffffff";
     ctx.fillRect(pad.left, pad.top, plotW, plotH);
 
     const kMinRef = lista[0].k_minimo || 0.0703;
@@ -646,10 +691,9 @@ function dibujarGraficaHistorial(listaInversa) {
         : pad.left + (idx / (lista.length - 1)) * plotW;
     const yToPx = (kVal) => pad.top + plotH - ((kVal - yMin) / (yMax - yMin)) * plotH;
 
-    // Cuadrícula horizontal
     ctx.strokeStyle = "#e2e8f0";
     ctx.fillStyle = "#64748b";
-    ctx.font = "10px sans-serif";
+    ctx.font = "10.5px 'JetBrains Mono', monospace";
     ctx.textAlign = "right";
     for (let i = 0; i <= 3; i++) {
         const val = yMin + (i / 3) * (yMax - yMin);
@@ -658,27 +702,30 @@ function dibujarGraficaHistorial(listaInversa) {
         ctx.moveTo(pad.left, py);
         ctx.lineTo(pad.left + plotW, py);
         ctx.stroke();
-        ctx.fillText(val.toFixed(4), pad.left - 6, py + 3);
+        ctx.fillText(val.toFixed(4), pad.left - 8, py + 3);
     }
 
-    // Umbral mínimo k_minimo
+    ctx.strokeStyle = "#cbd5e1";
+    ctx.strokeRect(pad.left, pad.top, plotW, plotH);
+
+    // Línea de umbral k_minimo
     const yUmbral = yToPx(kMinRef);
     ctx.save();
-    ctx.strokeStyle = "#dc2626";
+    ctx.strokeStyle = "#b91c1c";
     ctx.lineWidth = 1.5;
     ctx.setLineDash([5, 4]);
     ctx.beginPath();
     ctx.moveTo(pad.left, yUmbral);
     ctx.lineTo(pad.left + plotW, yUmbral);
     ctx.stroke();
-    ctx.fillStyle = "#dc2626";
-    ctx.font = "bold 10px sans-serif";
+    ctx.fillStyle = "#b91c1c";
+    ctx.font = "600 10.5px 'Inter', sans-serif";
     ctx.textAlign = "left";
-    ctx.fillText(`Umbral k mín (${kMinRef.toFixed(4)} min⁻¹)`, pad.left + 6, yUmbral - 5);
+    ctx.fillText(`Umbral mínimo (${kMinRef.toFixed(4)} min⁻¹)`, pad.left + 8, yUmbral - 5);
     ctx.restore();
 
-    // Línea de evolución de k
-    ctx.strokeStyle = "#0f172a";
+    // Trazado de k
+    ctx.strokeStyle = "#0f4c81";
     ctx.lineWidth = 2.2;
     ctx.beginPath();
     lista.forEach((item, idx) => {
@@ -689,22 +736,21 @@ function dibujarGraficaHistorial(listaInversa) {
     });
     ctx.stroke();
 
-    // Puntos de cada lote
     lista.forEach((item, idx) => {
         const px = xToPx(idx);
         const py = yToPx(item.k);
 
-        ctx.fillStyle = item.k < item.k_minimo ? "#dc2626" : "#16a34a";
+        ctx.fillStyle = item.k < item.k_minimo ? "#b91c1c" : "#15803d";
         ctx.beginPath();
-        ctx.arc(px, py, 5, 0, Math.PI * 2);
+        ctx.arc(px, py, 4.5, 0, Math.PI * 2);
         ctx.fill();
         ctx.strokeStyle = "#ffffff";
         ctx.lineWidth = 1.5;
         ctx.stroke();
 
         ctx.fillStyle = "#334155";
-        ctx.font = "10px sans-serif";
+        ctx.font = "10.5px 'JetBrains Mono', monospace";
         ctx.textAlign = "center";
-        ctx.fillText(item.id, px, pad.top + plotH + 16);
+        ctx.fillText(item.id, px, pad.top + plotH + 17);
     });
 }
